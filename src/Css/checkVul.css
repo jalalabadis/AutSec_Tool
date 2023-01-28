@@ -1,0 +1,105 @@
+.App {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  .smart-contract-input-container {
+    width: 80%;
+    margin: 20px auto;
+    background-color: #f2f2f2;
+    border-radius: 5px;
+    padding: 20px;
+    box-shadow: 0 0 10px #ccc;
+  }
+  
+  .smart-contract-input-header {
+    margin-bottom: 20px;
+  }
+  
+  .smart-contract-input-header h3 {
+    margin-top: 0;
+    color: #4caf50;
+  }
+  
+  .smart-contract-input-header p {
+    color: #777;
+    font-size: 14px;
+  }
+  
+  .smart-contract-code-container {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    overflow-wrap: break-word;
+    overflow-y: auto;
+    padding: 10px;
+    min-height: 200px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .smart-contract-code {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    font-size: 16px;
+    font-family: "Source Code Pro", monospace;
+    resize: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    background-color: #f5f5f5; /* adds a background color for better contrast */
+    line-height: 1.5; /* adds space between lines for better readability */
+    max-height: 70vh; /* sets a maximum height of 70% of the viewport height */
+    overflow-y: scroll; /* adds a scrollbar for large amounts of code */
+  }
+  .smart-contract-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+  }
+  
+  .btn-primary {
+    background-color: #4caf50;
+    color: #fff;
+    border: none;
+    margin-right: 10px;
+  }
+  
+  .btn-primary:hover {
+    background-color: #3e8e41;
+  }
+  
+  .btn-secondary {
+    background-color: #f2f2f2;
+    color: #777;
+    border: 1px solid #ccc;
+  }
+  
+  .btn-secondary:hover {
+    background-color: #e6e6e6;
+  }
+  .results-container {
+    width: 80%;
+    margin: 20px auto;
+  }
+  
+  .result-box {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #f9f9f9;
+  }
+  
