@@ -1,36 +1,48 @@
-import React from 'react'
+import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
+import React, { useEffect, useState } from 'react'
 import "../Css/plantable.css"
+import { child, get, getDatabase, ref, update } from 'firebase/database';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
+import { useNavigate } from 'react-router-dom';
 
 function Subscription() {
+  const db = getDatabase();
+  const navigate = useNavigate();
+  const [UserID, setUserID]=useState(0);
+  const [UserPlan, setUserPlan]=useState('');
+  const [PaypalPayment, setPaypalPayment]= useState(false);
+  const [ProfessionalExpireday, setProfessionalExpireday]=useState(30);
+  const [ProfessionalPrice, setProfessionalPrice]=useState(5);
 
-  const upgrade_plan =(e)=>{
-    e.preventDefault();
-   const data= {
-      "amount": 45,
-      "fiat": 'USD',
-      "status" :0,
-      "api_key" : 'cbTTZspB29uJM5NNDP4O0603gnx8ZM',
-      "seller_wallet_address": '0x4D6C92D5A31A301515997Ea79be69ca1f7a3602c', 
-      "metadata": {
-      "platform": "Autsec_Tool", 
-      "platform-invoice-id" : "9633", 
-      "redirectUrl" :"http://localhost:3000/subscription?"
-      }
-      };
-
-      fetch('https://pay.uranx.io/api/transactions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-    })
-    .then((response) => response.json())
-        .then((data) => {
-          window.location.href= ('https://pay.uranx.io/checkout/'+data.id);
-       
-        });
+  useEffect(()=>{
+onAuthStateChanged(auth, user=>{
+if(user){
+  setUserID(user.uid);
+  get(child(ref(db), 'User/'+user.uid)).then(snapshot=> {
+setUserPlan(snapshot.val().Plan);
+  });
+}
+else{
+  navigate('/')
+}
+});
+    ///--->
+get(child(ref(db), 'Admin/professional')).then(snapshot=>{
+if(snapshot.exists()){
+  setProfessionalPrice(snapshot.val().Price===undefined? ProfessionalPrice : snapshot.val().Price);
+  setProfessionalExpireday(snapshot.val().ExpireDay===undefined? ProfessionalExpireday : snapshot.val().ExpireDay);  
+}
+});
+  });
+const handleApprove =(orderID)=>{
+update(ref(db, 'User/'+UserID), {
+  Plan: 'Professional',
+  ExpireDate: Date.now()+(ProfessionalExpireday*24*60*60*1000)
+});
+navigate('/checkvul');
   };
+
   return (
     <div id="myModal" className="modal">
     <div className="modal-content">
@@ -43,7 +55,9 @@ function Subscription() {
       <div className="col-6">
       <div className="freecontent">
         <div className="bodytex1">Free Plan</div>
-        <button className="btn btn-secondary btn-lg btn-block">Your Current Plan</button>
+        {UserPlan==='Free'? 
+        <button className="btn btn-secondary btn-lg btn-block freebutton" >Your Current Plan</button>
+         : <></>}
         <ul>
           <li>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check2-circle" viewBox="0 0 16 16">
@@ -69,10 +83,16 @@ function Subscription() {
       <div className="col-6">
         <div className="row">
           <div className="col-8"><div className="bodytex1">Professional Plan</div></div>
-          <div className="col-4"><div className="planprice">$42/mo</div></div>
+          <div className="col-4"><div className="planprice">${ProfessionalPrice}/mo</div></div>
         </div>
-        <button className="btn btn-info btn-lg btn-block"
-        onClick={upgrade_plan}>Upgrade Plan</button>
+
+{PaypalPayment===false? <>
+  
+  {UserPlan==='Professional' ?  
+  <button className="btn btn-secondary btn-lg btn-block freebutton" >Your Current Plan</button>
+  :<button className="btn btn-info btn-lg btn-block"
+        onClick={e=>setPaypalPayment(true)}>Upgrade Plan</button>
+}
         <ul>
           <li>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="green" className="bi bi-check2-circle" viewBox="0 0 16 16">
@@ -93,7 +113,34 @@ function Subscription() {
             </svg>
             Priotly access to new features</li>
         </ul>
-  
+        </>
+        :
+  <PayPalScriptProvider options={{ "client-id": "Ac7wZ2A3SXnkRq-8XOWVrDhtxZWt0HNQ717VKkb6sRmkAy6YBM5oKxkuLs17kXXnnZ13aqjwhcfhe8K8" }}>
+  <PayPalButtons
+  createOrder={(data, actions) => {
+    return actions.order.create({
+        purchase_units: [
+            {
+                amount: {
+                    value: "1.99",
+                },
+            },
+        ],
+    });
+}}
+
+onApprove = { async (data, action) => {
+  const order = await action.order.capture();
+  console.log("order", order);
+  handleApprove(data.orderID);
+}}
+onCancel={() => {}}
+onError={(err) => {
+  console.log("PayPal Checkout onError", err);
+}}
+  />
+</PayPalScriptProvider>
+}
       </div>
     </div>
     </div></div>

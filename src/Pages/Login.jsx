@@ -19,6 +19,7 @@ const Login = () =>  {
 
     //> Firebase Variable
     const db= getDatabase();
+    const [FreeExpireDay, setFreeExpireDay]= useState(5);
     const googlprovider = new GoogleAuthProvider();
     const githubProvider = new GithubAuthProvider();
 
@@ -50,10 +51,11 @@ else{
    update(ref(db, 'User/'+user.uid), {
     UserID: user.uid,
     email: user.email,
-    displayName: user.displayName,
+    displayName: user.displayName!==null? user.displayName : displayName,
     Plan: 'Free',
+    Position: 'Player',
     BuyDate: Date.now(),
-    ExpireDate: Date.now()-(5*24*60*60*1000)
+    ExpireDate: Date.now()+(FreeExpireDay*24*60*60*1000)
    });
 }
 });
@@ -62,7 +64,15 @@ else{
 if(localStorage.getItem("isLogin")){
  navigate('/checkvul');
 }  
-    },[]);
+
+////////Free Expire Day
+get(child(ref(db), 'Admin/free')).then(snapshot=>{
+if(snapshot.exists()){
+    console.log(snapshot.val().ExpireDay)
+    setFreeExpireDay(snapshot.val().ExpireDay);
+}
+});
+},[FreeExpireDay, displayName]);
 
     //> Handle Functions 
 

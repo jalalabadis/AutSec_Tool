@@ -64,11 +64,41 @@
   }
   
   .btn-block{
-    width: 80%;
+    width: 98%;
     color: aliceblue;
   }
   
-  .btn-block:hover{
-    color: aliceblue;
+  .freebutton{
+    pointer-events: none;
   }
   
+  /* Admin */
+  .planContent{
+    list-style-type: none;
+  }
+
+  .planContent li{
+    display: flex;
+    height: 40px;
+  }
+
+  .planContent li input{
+    border: 0px;
+    outline: none;
+    width: 20%;
+    height: 35px;
+    margin: -3px 12px 0px;
+  }
+  .planContent li input:hover{
+    border: 0px;
+    outline:none;
+    background: #888;
+    width: 20%;
+    height: 35px;
+  }
+  /* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

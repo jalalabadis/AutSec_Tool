@@ -21,8 +21,6 @@ get(child(ref(db), 'User/'+user.uid)).then(snapshot=>{
 if(snapshot.exists()){
 const Buydate = new Date(snapshot.val().BuyDate);
 const ExpireDate = new Date(snapshot.val().ExpireDate);
-console.log(Buydate.toDateString().replace(/^\S+\s/,''));
-console.log(ExpireDate.toDateString().replace(/^\S+\s/,''));
 if(Date.now()>snapshot.val().ExpireDate){
 navigate('/subscription');
 }
