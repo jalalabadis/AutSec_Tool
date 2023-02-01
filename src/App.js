@@ -12,6 +12,7 @@ import Checkvul from './Pages/check-vul';
 import Dashbord from './Pages/Admin-Panel/Dashbord';
 import Plan from './Pages/Admin-Panel/Plan';
 import User from './Pages/Admin-Panel/User';
+import AddPlan from './Pages/Admin-Panel/AddPlan';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path='/admin-panel' element={<Dashbord/>}></Route>
         <Route path='/admin-panel/plan/:id' element={<Plan/>}></Route>
         <Route path='/admin-panel/user' element={<User/>}></Route>
+        <Route path='/admin-panel/add-plan/' element={<AddPlan/>}></Route>
       <Route path="*" element={<Error />} />
     </Routes>
   );

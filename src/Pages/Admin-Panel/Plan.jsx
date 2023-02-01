@@ -2,58 +2,91 @@ import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom';
 import AdminSidebar from './../../template_part/AdminSidebar';
 import AdminNav from './../../template_part/AdminNav';
-import { getDatabase, ref, update, get, child } from 'firebase/database';
+import { getDatabase, ref, update, get, child, onValue } from 'firebase/database';
 
 function Plan() {
     const {id} = useParams();
     const db = getDatabase();
-    const [FreeExpireday, setFreeExpireDay]=useState(5);
-    const [ProfessionalExpireday, setProfessionalExpireday]=useState(30);
-    const [ProfessionalPrice, setProfessionalPrice]=useState(5);
+    const [PlanName, setplanName]=useState('');
+    const [PlanPrice, setPlanPrice]=useState(0);
+    const [Planduration, setPlanduration]=useState(0);
+    const [PlanFeature, setPlanFeature]=useState({PlanFeature:[]});
+    const [FeatureText, setFeatureText]=useState('');
+    const [inveledID, setInvelidID]=useState(true);
 
   useEffect(()=>{
-get(child(ref(db), 'Admin/'+id)).then(snaphot=>{
+//////Plan DataLod
+onValue(ref(db, 'Plan_list/'+id), snaphot=>{
 if(snaphot.exists()){
-if(id==='free')
-{
-setFreeExpireDay(snaphot.val().ExpireDay===undefined?FreeExpireday:snaphot.val().ExpireDay);
-}
-else if(id==='professional'){
-setProfessionalPrice(snaphot.val().Price===undefined? ProfessionalPrice : snaphot.val().Price);
-setProfessionalExpireday(snaphot.val().ExpireDay===undefined? ProfessionalExpireday : snaphot.val().ExpireDay);
-}
-}
-else{
-  console.log('nodata');
-}
-});
-  },[]);
-
-const handelFreeExpireday=(e)=>{
-  setFreeExpireDay(e.target.value);
-  if(e.target.value>0){
-update(ref(db, 'Admin/'+id), {
-  ExpireDay: e.target.value
-});
+  setplanName(snaphot.val().Name);
+  setPlanPrice(snaphot.val().Price);
+  setPlanduration(snaphot.val().Duration);
+  
+  if(snaphot.val().Feature.split('name').length<=1){
   }
-    };
+  else if(snaphot.val().Feature.split('name').length>=2){
+    const records = '['+snaphot.val().Feature+']';
+    const JsonDatas= JSON.parse(records);
+    setPlanFeature({PlanFeature: JsonDatas});
+  }
+  
 
-  const handelProfessionalExpireday=(e)=>{
-    setProfessionalExpireday(e.target.value);
+  setInvelidID(false);
+}});
+},[id]);
+
+
+  ////Plan name
+  const handelPlanName=(e)=>{
+    setplanName(e.target.value);
+    if(e.target.value.length>1){
+      update(ref(db, 'Plan_list/'+id), {
+        Name: e.target.value
+      });
+    }
+      };
+  ////Plan duration
+  const handelPlanDuration=(e)=>{
+    setPlanduration(e.target.value);
       if(e.target.value>0){
-        update(ref(db, 'Admin/'+id), {
-          ExpireDay: e.target.value
+        update(ref(db, 'Plan_list/'+id), {
+          Duration: e.target.value
         });
       }
         };
-  const handelProfessionalPrice =(e)=>{
-setProfessionalPrice(e.target.value);
+  ////Profesonal Plan Price
+  const handelPlanPrice =(e)=>{
+    setPlanPrice(e.target.value);
 if(e.target.value>0){
-  update(ref(db, 'Admin/'+id), {
+  update(ref(db, 'Plan_list/'+id), {
     Price: e.target.value
   });
-    }
-  };
+    }};
+/////// Add PlanFeature
+const addFreeFeature =()=>{
+  get(child(ref(db), 'Plan_list/'+id)).then(snaphot=>{
+  if(snaphot.val().Feature.split('name').length<=1){
+    update(ref(db, 'Plan_list/'+id), {
+      Feature: '{"name":"'+FeatureText+'"}',
+    });
+  }
+  else if(snaphot.val().Feature.split('name').length>=2){
+    update(ref(db, 'Plan_list/'+id), {
+    Feature: snaphot.val().Feature+',{"name":"'+FeatureText+'"}',
+    });
+  }
+});
+setFeatureText('');
+};
+////Delete PlanFuture
+const Plandeletes=(e)=>{
+get(child(ref(db), 'Plan_list/'+id)).then(snaphot=>{
+    update(ref(db, 'Plan_list/'+id), {
+      Feature: snaphot.val().Feature.replace('{"name":"'+e.target.id+'"},', '') 
+    });
+});
+
+};
   return (
     <div className="container-fluid">
 <div className="row">
@@ -63,68 +96,34 @@ if(e.target.value>0){
 <AdminNav/>
  <main className="container-fluid">
  <div className="container">
-  <center style={{textTransform: 'capitalize'}}>{id} Plan </center>
+  <center style={{textTransform: 'capitalize'}}>{PlanName} Plan </center>
   <hr />
 
-{id==='free'? 
-<>
+{inveledID? 
+  <div>Not Found</div>
+  :
+  <>
 <ul className='planContent'>
-  <li>
+<li>
   <svg style={{margin: '5px'}} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check2-square" viewBox="0 0 16 16">
   <path d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5H3z"/>
   <path d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/>
 </svg>
-    Price: 0
+    Name: <input 
+    type="text" 
+    value={PlanName}
+    onChange={ handelPlanName}
+    />
   </li>
-  <li>
-  <svg style={{margin: '5px'}} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check2-square" viewBox="0 0 16 16">
-  <path d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5H3z"/>
-  <path d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/>
-</svg>
-    Expire Day: 
-    <input 
-    type="number" 
-    value={FreeExpireday}
-    onChange={handelFreeExpireday} />
-  </li>
-</ul>
-<hr />
-
-<ul style={{listStyleType: 'none'}}>
-  <li>
- <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check2-circle" viewBox="0 0 16 16">
-<path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
-<path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
- </svg>
- Avalevel when demaind is low</li>
-<li>
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check2-circle" viewBox="0 0 16 16">
-<path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
- <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
-</svg>
- Standerd respose speed</li>
-<li>
- <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check2-circle" viewBox="0 0 16 16">
- <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
-  <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
-</svg>
-Regular modul update</li>
-</ul>
-</>
-:
- 
-id==='professional' ?
-<>
-<ul className='planContent'>
   <li>
   <svg style={{margin: '5px'}} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check2-square" viewBox="0 0 16 16">
   <path d="M3 14.5A1.5 1.5 0 0 1 1.5 13V3A1.5 1.5 0 0 1 3 1.5h8a.5.5 0 0 1 0 1H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V8a.5.5 0 0 1 1 0v5a1.5 1.5 0 0 1-1.5 1.5H3z"/>
   <path d="m8.354 10.354 7-7a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0z"/>
 </svg>
     Price: <input 
-    type="text" 
-    value={ProfessionalPrice}
-    onChange={handelProfessionalPrice}
+    type="number" 
+    value={PlanPrice}
+    onChange={handelPlanPrice}
     />
   </li>
   <li>
@@ -135,36 +134,35 @@ id==='professional' ?
     Expire Day: 
     <input 
     type="number" 
-    value={ProfessionalExpireday}
-    onChange={handelProfessionalExpireday} />
+    value={Planduration}
+    onChange={handelPlanDuration} />
   </li>
 </ul>
 <hr />
-<ul style={{listStyleType: 'none'}}>
-<li>
- <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="green" className="bi bi-check2-circle" viewBox="0 0 16 16">
- <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
-  <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
-   </svg>
-    Avalevel when demaind is high</li>
-  <li>
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="green" className="bi bi-check2-circle" viewBox="0 0 16 16">
- <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
-   <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
-</svg>
- Standerd respose speed</li>
- <li>
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="green" className="bi bi-check2-circle" viewBox="0 0 16 16">
-  <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
- <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
- </svg>
- Priotly access to new features</li>
+{/* Plan Reature */}
+<ul style={{listStyleType: 'none'}}  >
+{PlanFeature.PlanFeature.map((row, index)=>{
+return(
+ <li key={index}>
+  <i className="bi bi-check2-circle"></i>{row.name}
+  <i id={row.name} onClick={Plandeletes} className="bi bi-trash dlplans"></i>
+  </li> 
+)
+})}
  </ul>
- </>
-:
 
-<div>Not Found</div>
+    <ul style={{listStyleType: 'none'}}>
+<li>
+  <input type="text" 
+  value={FeatureText}
+  onChange={e=>setFeatureText(e.target.value)}
+  style={{width: '20%', height:'20px', margin: '15px 15px 0px 0px'}} />
+<i onClick={addFreeFeature} className="bi bi-plus-circle-dotted"></i>
+ </li>
+</ul>
+</>
 }
+
  </div>
  </main>
   </div>

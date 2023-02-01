@@ -1,7 +1,7 @@
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 import React, { useEffect, useState } from 'react'
 import "../Css/plantable.css"
-import { child, get, getDatabase, ref, update } from 'firebase/database';
+import { child, get, getDatabase, ref, update, onValue } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
@@ -10,35 +10,63 @@ function Subscription() {
   const db = getDatabase();
   const navigate = useNavigate();
   const [UserID, setUserID]=useState(0);
-  const [UserPlan, setUserPlan]=useState('');
   const [PaypalPayment, setPaypalPayment]= useState(false);
-  const [ProfessionalExpireday, setProfessionalExpireday]=useState(30);
-  const [ProfessionalPrice, setProfessionalPrice]=useState(5);
+  const [PlanlistData, setplanlistData]=useState({PlanlistData:[]});
+  const [CurrentPlanId, setCurrentPlanID]=useState('0');
+  const [BuyPlanName, setBuyplanName]=useState('');
+  const [BuyPlanprice, setBuyPlanprice]=useState(0);
+  const [BuyPlanduration, setBuyPlanduration]=useState(0);
+  
 
   useEffect(()=>{
 onAuthStateChanged(auth, user=>{
 if(user){
   setUserID(user.uid);
-  get(child(ref(db), 'User/'+user.uid)).then(snapshot=> {
-setUserPlan(snapshot.val().Plan);
+  onValue(ref(db, 'User/'+user.uid), snapshot=> {
+    setCurrentPlanID(""+snapshot.val().PlanID+"");
   });
 }
 else{
   navigate('/')
 }
 });
-    ///--->
-get(child(ref(db), 'Admin/professional')).then(snapshot=>{
-if(snapshot.exists()){
-  setProfessionalPrice(snapshot.val().Price===undefined? ProfessionalPrice : snapshot.val().Price);
-  setProfessionalExpireday(snapshot.val().ExpireDay===undefined? ProfessionalExpireday : snapshot.val().ExpireDay);  
-}
+
+
+///////Plan DataList Call
+onValue(ref(db, 'Plan_list'), snapshot=>{
+  if(snapshot.exists()){
+    const records = [];
+    snapshot.forEach(childsnapshot=>{
+records.push(childsnapshot.val())
+    });
+    records.forEach(item=>{
+      const Plresult = (CurrentPlanId.search(item.ID));
+      if(Plresult!==-1){
+        item.CurrentPlan = true;
+        var dep1 = item.Feature.replace(/{"name":"/g, '<li><i class="bi bi-check2-circle"></i>');
+      var dep2 = dep1.replace(/,/g, '');
+      item.Feature = dep2.replace(/"}/g, '</li>')
+      }
+      else{
+        item.CurrentPlan = false;
+      var dep1 = item.Feature.replace(/{"name":"/g, '<li><i class="bi bi-check2-circle planaunctives"></i>');
+      var dep2 = dep1.replace(/,/g, '');
+      item.Feature = dep2.replace(/"}/g, '</li>')
+      }
+      
+    });
+  records.sort((a,b)=>b.Ms-a.Ms);
+    
+    setplanlistData({PlanlistData: records});
+  }
 });
-  });
+  },[CurrentPlanId, setCurrentPlanID]);
+
+  //////=====>Approve payment
 const handleApprove =(orderID)=>{
 update(ref(db, 'User/'+UserID), {
-  Plan: 'Professional',
-  ExpireDate: Date.now()+(ProfessionalExpireday*24*60*60*1000)
+  Plan: BuyPlanName,
+  ExpireDate: Date.now()+(BuyPlanduration*24*60*60*1000)
 });
 navigate('/checkvul');
   };
@@ -48,73 +76,10 @@ navigate('/checkvul');
     <div className="modal-content">
     <div className="row">
       <div className="col-6"> <div className="hader1">Your Account</div> </div>
-      <div className="col-6"><span className="close">&times;</span></div>
+      <div className="col-6"><span onClick={e=>setPaypalPayment(false)} className="close">&times;</span></div>
     </div>
     <hr className="new1"/>
-    <div className="row">
-      <div className="col-6">
-      <div className="freecontent">
-        <div className="bodytex1">Free Plan</div>
-        {UserPlan==='Free'? 
-        <button className="btn btn-secondary btn-lg btn-block freebutton" >Your Current Plan</button>
-         : <></>}
-        <ul>
-          <li>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check2-circle" viewBox="0 0 16 16">
-              <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
-              <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
-            </svg>
-          Avalevel when demaind is low</li>
-          <li>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check2-circle" viewBox="0 0 16 16">
-              <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
-              <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
-            </svg>
-          Standerd respose speed</li>
-          <li>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check2-circle" viewBox="0 0 16 16">
-              <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
-              <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
-            </svg>
-            Regular modul update</li>
-        </ul>
-      </div>
-      </div>
-      <div className="col-6">
-        <div className="row">
-          <div className="col-8"><div className="bodytex1">Professional Plan</div></div>
-          <div className="col-4"><div className="planprice">${ProfessionalPrice}/mo</div></div>
-        </div>
-
-{PaypalPayment===false? <>
-  
-  {UserPlan==='Professional' ?  
-  <button className="btn btn-secondary btn-lg btn-block freebutton" >Your Current Plan</button>
-  :<button className="btn btn-info btn-lg btn-block"
-        onClick={e=>setPaypalPayment(true)}>Upgrade Plan</button>
-}
-        <ul>
-          <li>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="green" className="bi bi-check2-circle" viewBox="0 0 16 16">
-              <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
-              <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
-            </svg>
-          Avalevel when demaind is high</li>
-          <li>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="green" className="bi bi-check2-circle" viewBox="0 0 16 16">
-              <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
-              <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
-            </svg>
-          Standerd respose speed</li>
-          <li>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="green" className="bi bi-check2-circle" viewBox="0 0 16 16">
-              <path d="M2.5 8a5.5 5.5 0 0 1 8.25-4.764.5.5 0 0 0 .5-.866A6.5 6.5 0 1 0 14.5 8a.5.5 0 0 0-1 0 5.5 5.5 0 1 1-11 0z"/>
-              <path d="M15.354 3.354a.5.5 0 0 0-.708-.708L8 9.293 5.354 6.646a.5.5 0 1 0-.708.708l3 3a.5.5 0 0 0 .708 0l7-7z"/>
-            </svg>
-            Priotly access to new features</li>
-        </ul>
-        </>
-        :
+{PaypalPayment? 
   <PayPalScriptProvider options={{ "client-id": "Ac7wZ2A3SXnkRq-8XOWVrDhtxZWt0HNQ717VKkb6sRmkAy6YBM5oKxkuLs17kXXnnZ13aqjwhcfhe8K8" }}>
   <PayPalButtons
   createOrder={(data, actions) => {
@@ -122,7 +87,7 @@ navigate('/checkvul');
         purchase_units: [
             {
                 amount: {
-                    value: "1.99",
+                    value: BuyPlanprice,
                 },
             },
         ],
@@ -140,9 +105,37 @@ onError={(err) => {
 }}
   />
 </PayPalScriptProvider>
+:
+
+    <div className="row">
+{PlanlistData.PlanlistData.map((row, index)=>{
+return(
+
+  <div className="col-6" key={index}>
+ 
+    <div className="row">
+    <div className="col-8"><div className="bodytex1">{row.Name} Plan</div></div>
+      <div className="col-4"><div className="planprice">${row.Price}/mo</div></div>
+        </div>   
+        {row.CurrentPlan ?  
+  <button className="btn btn-secondary btn-lg btn-block freebutton" >Your Current Plan</button>
+  :<button className="btn btn-info btn-lg btn-block"
+        onClick={e=>{setPaypalPayment(true);
+          setBuyPlanprice(row.Price);
+          setBuyPlanduration(row.Duration);
+          setBuyplanName(row.Name);
+          }}>Upgrade Plan</button>
 }
-      </div>
+        <ul>
+          <div dangerouslySetInnerHTML={{ __html: row.Feature}}></div>
+          
+        </ul>
+        </div>
+)
+
+})}
     </div>
+}
     </div></div>
   )
 }

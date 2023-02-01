@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 import "../Css/checkVul.css"
-import { child, get, getDatabase, ref } from 'firebase/database';
+import {  getDatabase, onValue, ref } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from "../firebase";
 import { useNavigate } from 'react-router-dom';
@@ -17,10 +17,8 @@ const Checkvul = () => {
     useEffect(()=>{
 onAuthStateChanged(auth, user=>{
 if(user){
-get(child(ref(db), 'User/'+user.uid)).then(snapshot=>{
+onValue(ref(db, 'User/'+user.uid), snapshot=>{
 if(snapshot.exists()){
-const Buydate = new Date(snapshot.val().BuyDate);
-const ExpireDate = new Date(snapshot.val().ExpireDate);
 if(Date.now()>snapshot.val().ExpireDate){
 navigate('/subscription');
 }

@@ -88,3 +88,17 @@ table {
     text-decoration: none;
     cursor: pointer;
   }
+
+  /* Delete plan */
+  .dlplans{
+    color: white;
+
+  }
+  .dlplans:hover{
+    color: rgb(241, 16, 16);
+    
+  }
+
+  .activert{
+    color:rgb(77, 226, 77)
+  }

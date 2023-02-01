@@ -19,7 +19,9 @@ const Login = () =>  {
 
     //> Firebase Variable
     const db= getDatabase();
-    const [FreeExpireDay, setFreeExpireDay]= useState(5);
+    const [FreeExpireDay, setFreeExpireDay]= useState(0);
+    const [PlanName, setPlanName]= useState('No Plan');
+    const [PlanID, setPlanID]=useState('0');
     const googlprovider = new GoogleAuthProvider();
     const githubProvider = new GithubAuthProvider();
 
@@ -52,7 +54,8 @@ else{
     UserID: user.uid,
     email: user.email,
     displayName: user.displayName!==null? user.displayName : displayName,
-    Plan: 'Free',
+    Plan: PlanName,
+    PlanID: PlanID,
     Position: 'Player',
     BuyDate: Date.now(),
     ExpireDate: Date.now()+(FreeExpireDay*24*60*60*1000)
@@ -65,14 +68,18 @@ if(localStorage.getItem("isLogin")){
  navigate('/checkvul');
 }  
 
-////////Free Expire Day
-get(child(ref(db), 'Admin/free')).then(snapshot=>{
+////////Set Register Expire Day
+get(child(ref(db), 'Register_Plan')).then(snapshot=>{
 if(snapshot.exists()){
-    console.log(snapshot.val().ExpireDay)
-    setFreeExpireDay(snapshot.val().ExpireDay);
+get(child(ref(db), 'Plan_list/'+snapshot.val().ID)).then(snapshot=>{
+        if(snapshot.exists()){
+setFreeExpireDay(snapshot.val().Duration);
+setPlanName(snapshot.val().Name);
+setPlanID(snapshot.val().ID);
+        }});
 }
 });
-},[FreeExpireDay, displayName]);
+},[FreeExpireDay, displayName, PlanID, PlanName]);
 
     //> Handle Functions 
 
