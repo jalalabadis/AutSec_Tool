@@ -5,8 +5,12 @@ import {  getDatabase, onValue, ref } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from "../firebase";
 import { useNavigate } from 'react-router-dom';
+import ReactGA from 'react-ga';
+
 
 const Checkvul = () => {
+ReactGA.initialize('UA-256865843-1');
+ReactGA.pageview(window.location.pathname + window.location.search);
     const db = getDatabase();
     const navigate = useNavigate();
     const [contractCode, setContractCode] = useState("");

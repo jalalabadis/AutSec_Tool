@@ -1,21 +1,28 @@
-import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import StripeCheckout from 'react-stripe-checkout';
 import "../Css/plantable.css"
 import { child, get, getDatabase, ref, update, onValue } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import ReactGA from 'react-ga';
 
 function Subscription() {
+ReactGA.initialize('UA-256865843-1');
+ReactGA.pageview(window.location.pathname + window.location.search);
+  const stripecheckout = useRef(null);
   const db = getDatabase();
   const navigate = useNavigate();
   const [UserID, setUserID]=useState(0);
-  const [PaypalPayment, setPaypalPayment]= useState(false);
+  //const [PaypalPayment, setPaypalPayment]= useState(false);
   const [PlanlistData, setplanlistData]=useState({PlanlistData:[]});
   const [CurrentPlanId, setCurrentPlanID]=useState('0');
+  const [BuyPlanID, setBuyPlanID]=useState(0);
   const [BuyPlanName, setBuyplanName]=useState('');
   const [BuyPlanprice, setBuyPlanprice]=useState(0);
   const [BuyPlanduration, setBuyPlanduration]=useState(0);
+
   
 
   useEffect(()=>{
@@ -60,9 +67,14 @@ records.push(childsnapshot.val())
     setplanlistData({PlanlistData: records});
   }
 });
-  },[CurrentPlanId, setCurrentPlanID]);
 
-  //////=====>Approve payment
+////===>Redy to call Stripe Payment
+if(BuyPlanprice!==0){
+  stripecheckout.current.click();
+}
+  },[CurrentPlanId, setCurrentPlanID, BuyPlanprice]);
+
+  /*/////=====>Approve payment
 const handleApprove =(orderID)=>{
 update(ref(db, 'User/'+UserID), {
   Plan: BuyPlanName,
@@ -70,48 +82,41 @@ update(ref(db, 'User/'+UserID), {
 });
 navigate('/checkvul');
   };
+*/
+  ///////========>Stripe Payment
+  const onToken=(token)=>{
+    console.log(token);
+    console.log(BuyPlanprice,BuyPlanduration,BuyPlanName);
+    const data ={token, BuyPlanprice}
+    axios.post('http://localhost:4000/payment', data).then(res=>{
+      update(ref(db, 'User/'+UserID), {
+        PlanID: BuyPlanID,
+        Plan: BuyPlanName,
+        BuyDate: Date.now(),
+        ExpireDate: Date.now()+(BuyPlanduration*24*60*60*1000)
+      });
+      navigate('/checkvul');
+    }).catch(err=> console.log(err))
+  }
 
   return (
     <div id="myModal" className="modal">
     <div className="modal-content">
     <div className="row">
       <div className="col-6"> <div className="hader1">Your Account</div> </div>
-      <div className="col-6"><span onClick={e=>setPaypalPayment(false)} className="close">&times;</span></div>
+      <div className="col-6"><span className="close">&times;</span></div>
     </div>
     <hr className="new1"/>
-{PaypalPayment? 
-  <PayPalScriptProvider options={{ "client-id": "Ac7wZ2A3SXnkRq-8XOWVrDhtxZWt0HNQ717VKkb6sRmkAy6YBM5oKxkuLs17kXXnnZ13aqjwhcfhe8K8" }}>
-  <PayPalButtons
-  createOrder={(data, actions) => {
-    return actions.order.create({
-        purchase_units: [
-            {
-                amount: {
-                    value: BuyPlanprice,
-                },
-            },
-        ],
-    });
-}}
+  
+<div className="row">
 
-onApprove = { async (data, action) => {
-  const order = await action.order.capture();
-  console.log("order", order);
-  handleApprove(data.orderID);
-}}
-onCancel={() => {}}
-onError={(err) => {
-  console.log("PayPal Checkout onError", err);
-}}
-  />
-</PayPalScriptProvider>
-:
 
-    <div className="row">
 {PlanlistData.PlanlistData.map((row, index)=>{
 return(
 
   <div className="col-6" key={index}>
+
+
  
     <div className="row">
     <div className="col-8"><div className="bodytex1">{row.Name} Plan</div></div>
@@ -119,12 +124,16 @@ return(
         </div>   
         {row.CurrentPlan ?  
   <button className="btn btn-secondary btn-lg btn-block freebutton" >Your Current Plan</button>
-  :<button className="btn btn-info btn-lg btn-block"
-        onClick={e=>{setPaypalPayment(true);
-          setBuyPlanprice(row.Price);
-          setBuyPlanduration(row.Duration);
-          setBuyplanName(row.Name);
-          }}>Upgrade Plan</button>
+  :
+  
+
+  <button className="btn btn-info btn-lg btn-block"
+        onClick={e=>{
+          setBuyPlanID(row.ID)
+          setBuyplanName(row.Name)
+          setBuyPlanprice(row.Price)
+          setBuyPlanduration(row.Duration)
+        }}>Upgrade Plan</button>
 }
         <ul>
           <div dangerouslySetInnerHTML={{ __html: row.Feature}}></div>
@@ -134,8 +143,21 @@ return(
 )
 
 })}
+
     </div>
-}
+    <StripeCheckout
+        token={onToken}
+        //Public API key
+        stripeKey="pk_test_51MZk6BHTPolvFWGjPNhdRXqKCvfvXo1ktfJYDL3zz3xLGDOe12okRdqK2lraMemiqvMXGAMJt4M9fmjNDo0I0DXG00kemkHjJG"
+        amount={BuyPlanprice*100} // cents
+        currency="USD"
+        name="Autsec Tool" 
+        description={BuyPlanName+' Package'}
+        image="https://i.ibb.co/18knWfd/autsec.png"
+        allowRememberMe
+        >
+    <button style={{display:'none'}} ref={stripecheckout}></button>
+    </StripeCheckout>
     </div></div>
   )
 }
