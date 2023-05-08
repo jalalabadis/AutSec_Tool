@@ -4,7 +4,7 @@ import "../Css/checkVul.css"
 import {  getDatabase, onValue, ref } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from "../firebase";
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ReactGA from 'react-ga';
 
 
@@ -13,6 +13,7 @@ ReactGA.initialize('UA-256865843-1');
 ReactGA.pageview(window.location.pathname + window.location.search);
     const db = getDatabase();
     const navigate = useNavigate();
+    const [userPlan, setUserPlan]=useState();
     const [contractCode, setContractCode] = useState("");
     const [results, setResults] = useState({});
 
@@ -23,6 +24,7 @@ onAuthStateChanged(auth, user=>{
 if(user){
 onValue(ref(db, 'User/'+user.uid), snapshot=>{
 if(snapshot.exists()){
+setUserPlan(snapshot.val().Plan)
 if(Date.now()>snapshot.val().ExpireDate){
 navigate('/subscription');
 }
@@ -56,6 +58,7 @@ navigate('/subscription');
     
     return (
         <div className="App">
+            <p>My Plan: <Link to={'/subscription'}>{userPlan}</Link></p>
             <form onSubmit={handleSubmit}>
                 <div className="smart-contract-input-container">
                 <div className="smart-contract-input-header">

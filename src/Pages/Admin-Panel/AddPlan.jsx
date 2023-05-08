@@ -50,7 +50,7 @@ if(PlanName.length>=2&&PlanPrice>=0&&Planduration>=0&&PlanFeature.length>=2){
     Name: PlanName,
     Price: PlanPrice,
     Duration: Planduration,
-    Feature: '{"name":"'+PlanFeature+'"}',
+    Features: {[Ms]:{name:PlanFeature, ID: Ms}},
     ID: Ms,
     Ms: Ms
     });

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import StripeCheckout from 'react-stripe-checkout';
 import "../Css/plantable.css"
-import { child, get, getDatabase, ref, update, onValue } from 'firebase/database';
+import {getDatabase, ref, update, onValue } from 'firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase';
 import { useNavigate } from 'react-router-dom';
@@ -50,21 +50,16 @@ records.push(childsnapshot.val())
       const Plresult = (CurrentPlanId.search(item.ID));
       if(Plresult!==-1){
         item.CurrentPlan = true;
-        var dep1 = item.Feature.replace(/{"name":"/g, '<li><i class="bi bi-check2-circle"></i>');
-      var dep2 = dep1.replace(/,/g, '');
-      item.Feature = dep2.replace(/"}/g, '</li>')
+        item.Price = 1;
       }
       else{
         item.CurrentPlan = false;
-      var dep1 = item.Feature.replace(/{"name":"/g, '<li><i class="bi bi-check2-circle planaunctives"></i>');
-      var dep2 = dep1.replace(/,/g, '');
-      item.Feature = dep2.replace(/"}/g, '</li>')
       }
       
     });
   records.sort((a,b)=>b.Ms-a.Ms);
-    
-    setplanlistData({PlanlistData: records});
+  const filterRecords = records.filter(item=> item.Price>=1).sort((a, b) => b.CurrentPlan - a.CurrentPlan);
+    setplanlistData({PlanlistData: filterRecords});
   }
 });
 
@@ -72,18 +67,10 @@ records.push(childsnapshot.val())
 if(BuyPlanprice!==0){
   stripecheckout.current.click();
 }
-  },[CurrentPlanId, setCurrentPlanID, BuyPlanprice]);
+},[CurrentPlanId, setCurrentPlanID, BuyPlanprice]);
 
-  /*/////=====>Approve payment
-const handleApprove =(orderID)=>{
-update(ref(db, 'User/'+UserID), {
-  Plan: BuyPlanName,
-  ExpireDate: Date.now()+(BuyPlanduration*24*60*60*1000)
-});
-navigate('/checkvul');
-  };
-*/
-  ///////========>Stripe Payment
+
+///////========>Stripe Payment
   const onToken=(token)=>{
     console.log(token);
     console.log(BuyPlanprice,BuyPlanduration,BuyPlanName);
@@ -97,55 +84,141 @@ navigate('/checkvul');
       });
       navigate('/checkvul');
     }).catch(err=> console.log(err))
-  }
+  };
+
+  const cancelPlan=()=>{
+    update(ref(db, 'User/'+UserID), {
+      PlanID: 'No Plan',
+      Plan: 'No Plan',
+      BuyDate: Date.now(),
+      ExpireDate: Date.now()
+    });
+  };
 
   return (
-    <div id="myModal" className="modal">
-    <div className="modal-content">
-    <div className="row">
-      <div className="col-6"> <div className="hader1">Your Account</div> </div>
-      <div className="col-6"><span className="close">&times;</span></div>
-    </div>
-    <hr className="new1"/>
-  
-<div className="row">
+<div className="relative w-full transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all dark:bg-gray-900 sm:my-8 !my-0 flex min-h-screen flex-col items-center justify-center !rounded-none !py-0 bg-transparent dark:bg-transparent opacity-100 translate-y-0 sm:scale-100">
+<div className="flex items-center justify-between border-b-[1px] border-black/10 dark:border-white/10 px-4 pb-4 pt-5 sm:p-6">
+<div className="flex items-center">
+<div className="text-center sm:text-left">
+<h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-200"></h3>
+</div></div>
+</div>
+<div className="p-4 sm:p-6 sm:pt-4">
+<div className="flex h-full flex-col items-center justify-start">
+<div className="relative">
+<div className="grow justify-center bg-white dark:bg-gray-900 rounded-md flex flex-col items-start overflow-hidden border shadow-md dark:border-gray-700">
 
-
-{PlanlistData.PlanlistData.map((row, index)=>{
-return(
-
-  <div className="col-6" key={index}>
-
-
+<div className="flex w-full flex-row items-center justify-between border-b px-4 py-3 dark:border-gray-700">
+<span className="text-base font-semibold sm:text-base">Your plan</span>
+<button className="text-gray-700 opacity-50 transition hover:opacity-75 dark:text-white" onClick={e=>navigate('/')}>
+<svg stroke="currentColor" fill="none"  viewBox="0 0 24 24"  className="h-6 w-6" height="1em"  width="1em" xmlns="http://www.w3.org/2000/svg">
+<line x1="18" y1="6" x2="6" y2="18"></line>
+<line x1="6" y1="6" x2="18" y2="18"></line>
+ </svg></button></div>
  
-    <div className="row">
-    <div className="col-8"><div className="bodytex1">{row.Name} Plan</div></div>
-      <div className="col-4"><div className="planprice">${row.Price}/mo</div></div>
-        </div>   
-        {row.CurrentPlan ?  
-  <button className="btn btn-secondary btn-lg btn-block freebutton" >Your Current Plan</button>
-  :
-  
+{PlanlistData.PlanlistData.map((item, index) => {
+    if (index % 2 === 0) {
+      return (
+<div className="grid sm:grid-cols-2" key={index}>
+<div className="relative order-2 col-span-1 border-r-0 border-t dark:border-gray-700 sm:order-1 sm:border-r sm:border-t-0 popup-dccotrt-width">
+<div className="p-3 flex flex-col gap-3 bg-white z-20 relative dark:bg-gray-900">
+<div className="text-xl font-semibold justify-between items-center flex">
+<span>{item.Name}</span>
+{item?.CurrentPlan ?<></>:
+<span className="font-semibold text-gray-500">USD ${item.Price}/mo</span>
+    }
+</div>
 
-  <button className="btn btn-info btn-lg btn-block"
-        onClick={e=>{
-          setBuyPlanID(row.ID)
-          setBuyplanName(row.Name)
-          setBuyPlanprice(row.Price)
-          setBuyPlanduration(row.Duration)
-        }}>Upgrade Plan</button>
+{item?.CurrentPlan ?
+  <button className="cursor-not-allowed opacity-50 botndc relative botndc-planingdc dark:text-gray-white border-none bg-gray-300 py-3 font-semibold text-gray-800 hover:bg-gray-300 dark:bg-gray-500 dark:opacity-100"  disabled="trur">
+<div  className="flex w-full items-center justify-center gap-2">
+ <span className="inline-block">Your current plan</span>
+ </div>
+ </button>
+ :
+<button className="botndc relative botndc-planingdc border-none py-3 font-semibold"
+onClick={e=>{
+  setBuyPlanID(item.ID)
+  setBuyplanName(item.Name)
+  setBuyPlanprice(item.Price)
+  setBuyPlanduration(item.Duration)
+}}>
+<div className="flex w-full items-center justify-center gap-2">
+<span className="inline-block text-white">Upgrade plan</span></div>
+</button>
 }
-        <ul>
-          <div dangerouslySetInnerHTML={{ __html: row.Feature}}></div>
-          
-        </ul>
+
+{item.Features &&
+  Object.entries(item.Features).map(([key, value], index)=>{
+return(
+   <div  key={key} className="gap-2 flex flex-row justify-start items-center text-sm">
+<svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" className={item?.CurrentPlan ?"h-4 w-4 h-5 w-5 text-gray-400":"h-4 w-4 h-5 w-5 text-green-700"} height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+ <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+<polyline points="22 4 12 14.01 9 11.01"></polyline>
+</svg><span>{value.name}</span></div>
+)})}
+
+{item?.CurrentPlan ? 
+<button className='btn btn-danger' onClick={cancelPlan}>Cancel</button>:<></>
+}
+</div></div>
+{PlanlistData.PlanlistData[index + 1] && (
+<div className="relative order-2 col-span-1 sm:order-2 popup-dccotrt-width">
+<div className="p-3 flex flex-col gap-3 bg-white z-20 relative dark:bg-gray-900">
+<div className="text-xl font-semibold justify-between items-center flex">
+<span>{PlanlistData.PlanlistData[index + 1].Name}</span>
+
+{PlanlistData.PlanlistData[index + 1]?.CurrentPlan ?<></>:
+<span className="font-semibold text-gray-500">USD ${PlanlistData.PlanlistData[index + 1].Price}/mo</span>
+    }
+</div>
+
+{PlanlistData.PlanlistData[index + 1]?.CurrentPlan ?
+  <button className="cursor-not-allowed opacity-50 botndc relative botndc-planingdc dark:text-gray-white border-none bg-gray-300 py-3 font-semibold text-gray-800 hover:bg-gray-300 dark:bg-gray-500 dark:opacity-100"  disabled="true">
+<div  className="flex w-full items-center justify-center gap-2">
+ <span className="inline-block">Your current plan</span>
+ </div>
+ </button>
+ :
+<button className="botndc relative botndc-planingdc border-none py-3 font-semibold" onClick={e=>{
+          setBuyPlanID(PlanlistData.PlanlistData[index + 1].ID)
+          setBuyplanName(PlanlistData.PlanlistData[index + 1].Name)
+          setBuyPlanprice(PlanlistData.PlanlistData[index + 1].Price)
+          setBuyPlanduration(PlanlistData.PlanlistData[index + 1].Duration)
+        }}>
+<div className="flex w-full items-center justify-center gap-2">
+<span className="inline-block text-white">Upgrade plan</span></div>
+</button>
+}
+
+{PlanlistData.PlanlistData[index + 1].Features &&
+  Object.entries(PlanlistData.PlanlistData[index + 1].Features).map(([key, value], index)=>{
+return (
+
+<div  key={key} className="gap-2 flex flex-row justify-start items-center text-sm">
+        <svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" className={PlanlistData.PlanlistData[index + 1]?.CurrentPlan ?"h-4 w-4 h-5 w-5 text-gray-400":"h-4 w-4 h-5 w-5 text-green-700"} height="1em" width="1em" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg><span>{value.name}</span>
         </div>
 )
-
 })}
 
-    </div>
-    <StripeCheckout
+{PlanlistData.PlanlistData[index + 1]?.CurrentPlan ? 
+<button className='btn btn-danger' onClick={cancelPlan}>Cancel</button>:<></>
+}   
+</div></div>
+          )}
+</div>
+      );
+    } else {
+      return null;
+    }
+  })}
+
+  </div></div></div></div>
+  
+  <StripeCheckout
         token={onToken}
         //Public API key
         stripeKey="pk_test_51MZk6BHTPolvFWGjPNhdRXqKCvfvXo1ktfJYDL3zz3xLGDOe12okRdqK2lraMemiqvMXGAMJt4M9fmjNDo0I0DXG00kemkHjJG"
@@ -158,7 +231,7 @@ return(
         >
     <button style={{display:'none'}} ref={stripecheckout}></button>
     </StripeCheckout>
-    </div></div>
+  </div>
   )
 }
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom';
 import AdminSidebar from './../../template_part/AdminSidebar';
 import AdminNav from './../../template_part/AdminNav';
-import { getDatabase, ref, update, get, child, onValue } from 'firebase/database';
+import { getDatabase, ref, update, get, child, onValue, remove } from 'firebase/database';
 
 function Plan() {
     const {id} = useParams();
@@ -10,7 +10,7 @@ function Plan() {
     const [PlanName, setplanName]=useState('');
     const [PlanPrice, setPlanPrice]=useState(0);
     const [Planduration, setPlanduration]=useState(0);
-    const [PlanFeature, setPlanFeature]=useState({PlanFeature:[]});
+    const [PlanFeature, setPlanFeature]=useState();
     const [FeatureText, setFeatureText]=useState('');
     const [inveledID, setInvelidID]=useState(true);
 
@@ -22,15 +22,9 @@ if(snaphot.exists()){
   setPlanPrice(snaphot.val().Price);
   setPlanduration(snaphot.val().Duration);
   
-  if(snaphot.val().Feature.split('name').length<=1){
-  }
-  else if(snaphot.val().Feature.split('name').length>=2){
-    const records = '['+snaphot.val().Feature+']';
-    const JsonDatas= JSON.parse(records);
-    setPlanFeature({PlanFeature: JsonDatas});
-  }
+    setPlanFeature(snaphot.val().Features);
   
-
+  
   setInvelidID(false);
 }});
 },[id]);
@@ -64,28 +58,16 @@ if(e.target.value>0){
     }};
 /////// Add PlanFeature
 const addFreeFeature =()=>{
-  get(child(ref(db), 'Plan_list/'+id)).then(snaphot=>{
-  if(snaphot.val().Feature.split('name').length<=1){
-    update(ref(db, 'Plan_list/'+id), {
-      Feature: '{"name":"'+FeatureText+'"}',
+  const Ms = Date.now();
+update(ref(db, 'Plan_list/'+id+'/Features/'+Ms), {
+   name:FeatureText, 
+   ID: Ms
     });
-  }
-  else if(snaphot.val().Feature.split('name').length>=2){
-    update(ref(db, 'Plan_list/'+id), {
-    Feature: snaphot.val().Feature+',{"name":"'+FeatureText+'"}',
-    });
-  }
-});
 setFeatureText('');
 };
 ////Delete PlanFuture
 const Plandeletes=(e)=>{
-get(child(ref(db), 'Plan_list/'+id)).then(snaphot=>{
-    update(ref(db, 'Plan_list/'+id), {
-      Feature: snaphot.val().Feature.replace('{"name":"'+e.target.id+'"},', '') 
-    });
-});
-
+  remove((ref(db, 'Plan_list/'+id+'/Features/'+e.target.id)));
 };
   return (
     <div className="container-fluid">
@@ -141,11 +123,11 @@ get(child(ref(db), 'Plan_list/'+id)).then(snaphot=>{
 <hr />
 {/* Plan Reature */}
 <ul style={{listStyleType: 'none'}}  >
-{PlanFeature.PlanFeature.map((row, index)=>{
+{PlanFeature&& Object.entries(PlanFeature).map(([key, value], index)=>{
 return(
- <li key={index}>
-  <i className="bi bi-check2-circle"></i>{row.name}
-  <i id={row.name} onClick={Plandeletes} className="bi bi-trash dlplans"></i>
+ <li key={key}>
+  <i className="bi bi-check2-circle"></i>{value.name}
+  <i id={value.ID} onClick={Plandeletes} className="bi bi-trash dlplans"></i>
   </li> 
 )
 })}
