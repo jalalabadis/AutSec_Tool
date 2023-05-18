@@ -22,10 +22,11 @@ ReactGA.pageview(window.location.pathname + window.location.search);
   const [BuyPlanName, setBuyplanName]=useState('');
   const [BuyPlanprice, setBuyPlanprice]=useState(0);
   const [BuyPlanduration, setBuyPlanduration]=useState(0);
+  const [Error, setError]=useState(false);
 
   
 
-  useEffect(()=>{
+useEffect(()=>{
 onAuthStateChanged(auth, user=>{
 if(user){
   setUserID(user.uid);
@@ -72,10 +73,9 @@ if(BuyPlanprice!==0){
 
 ///////========>Stripe Payment
   const onToken=(token)=>{
-    console.log(token);
-    console.log(BuyPlanprice,BuyPlanduration,BuyPlanName);
     const data ={token, BuyPlanprice}
-    axios.post('http://localhost:4000/payment', data).then(res=>{
+    axios.post('/payment/stripe', data).then(res=>{
+      if(res.data.status==="succeeded"){
       update(ref(db, 'User/'+UserID), {
         PlanID: BuyPlanID,
         Plan: BuyPlanName,
@@ -83,7 +83,11 @@ if(BuyPlanprice!==0){
         ExpireDate: Date.now()+(BuyPlanduration*24*60*60*1000)
       });
       navigate('/checkvul');
-    }).catch(err=> console.log(err))
+    }
+    }).catch(err=> {
+      console.log(err);
+      setError(true);
+    })
   };
 
   const cancelPlan=()=>{
@@ -100,7 +104,9 @@ if(BuyPlanprice!==0){
 <div className="flex items-center justify-between border-b-[1px] border-black/10 dark:border-white/10 px-4 pb-4 pt-5 sm:p-6">
 <div className="flex items-center">
 <div className="text-center sm:text-left">
-<h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-200"></h3>
+  {Error &&
+<h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-200" style={{color: "red"}}>Payment Error</h3>
+}
 </div></div>
 </div>
 <div className="p-4 sm:p-6 sm:pt-4">
@@ -221,12 +227,12 @@ return (
   <StripeCheckout
         token={onToken}
         //Public API key
-        stripeKey="pk_test_51MZk6BHTPolvFWGjPNhdRXqKCvfvXo1ktfJYDL3zz3xLGDOe12okRdqK2lraMemiqvMXGAMJt4M9fmjNDo0I0DXG00kemkHjJG"
+        stripeKey= {process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY}
         amount={BuyPlanprice*100} // cents
-        currency="USD"
-        name="Autsec Tool" 
+        currency={process.env.REACT_APP_STRIPE_CURRENCY}
+        name={process.env.REACT_APP_STRIPE_NAME} 
         description={BuyPlanName+' Package'}
-        image="https://i.ibb.co/18knWfd/autsec.png"
+        image={process.env.REACT_APP_STRIPE_IMG}
         allowRememberMe
         >
     <button style={{display:'none'}} ref={stripecheckout}></button>
