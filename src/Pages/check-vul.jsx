@@ -58,7 +58,7 @@ navigate('/subscription');
     
     return (
         <div className="App">
-            <p>My Plan: <Link to={'/subscription'}>{userPlan}</Link></p>
+            <p>My Plan: <Link to={'/subscription'}>{userPlan?userPlan:"Upgrade Plan"}</Link></p>
             <form onSubmit={handleSubmit}>
                 <div className="smart-contract-input-container">
                 <div className="smart-contract-input-header">
