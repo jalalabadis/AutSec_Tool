@@ -43,6 +43,19 @@ const Login = () =>  {
 
     //> UseEffect
     useEffect(()=>{
+////////Set Register Expire Day
+get(child(ref(db), 'Register_Plan')).then(snapshot=>{
+    if(snapshot.exists()){
+    get(child(ref(db), 'Plan_list/'+snapshot.val().ID)).then(snapshot=>{
+            if(snapshot.exists()){
+    setFreeExpireDay(snapshot.val().Duration);
+    setPlanName(snapshot.val().Name);
+    setPlanID(snapshot.val().ID);
+            }});
+    }
+    });
+
+////User Auth change 
 onAuthStateChanged(auth, (user)=>{
 if(user){
 get(child(ref(db), 'User/'+user.uid)).then(snapshot=>{
@@ -67,18 +80,6 @@ else{
 if(localStorage.getItem("isLogin")){
  navigate('/checkvul');
 }  
-
-////////Set Register Expire Day
-get(child(ref(db), 'Register_Plan')).then(snapshot=>{
-if(snapshot.exists()){
-get(child(ref(db), 'Plan_list/'+snapshot.val().ID)).then(snapshot=>{
-        if(snapshot.exists()){
-setFreeExpireDay(snapshot.val().Duration);
-setPlanName(snapshot.val().Name);
-setPlanID(snapshot.val().ID);
-        }});
-}
-});
 },[FreeExpireDay, displayName, PlanID, PlanName]);
 
     //> Handle Functions 
